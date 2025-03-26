@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Processor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h1 class="text-2xl font-bold mb-6">File Processor</h1>
+            
+            <!-- File Upload -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Upload File</label>
+                <div class="flex items-center justify-center w-full">
+                    <label class="w-full flex flex-col items-center px-4 py-6 bg-white rounded-lg border-2 border-gray-300 border-dashed cursor-pointer hover:border-blue-500">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
+                        <span class="text-sm text-gray-500">Click to upload or drag and drop</span>
+                        <input id="fileInput" type="file" class="hidden" accept=".txt,.log,.csv">
+                    </label>
+                </div>
+                
+                <!-- Upload Progress -->
+                <div id="uploadProgress" class="hidden mt-4">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-sm font-medium text-blue-500">Uploading...</span>
+                        <span id="uploadPercent" class="text-sm font-medium text-blue-500">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div id="uploadBar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- File Info -->
+            <div id="fileInfo" class="hidden mb-6 p-4 bg-gray-50 rounded-lg">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="font-medium">File Information</h3>
+                    <button onclick="resetForm()" class="text-red-500 hover:text-red-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <span class="text-gray-500">Name:</span>
+                        <span id="fileName" class="ml-2 font-mono"></span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Size:</span>
+                        <span id="fileSize" class="ml-2 font-mono"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Processing Options -->
+            <div class="mb-6">
+                <h3 class="text-lg font-medium mb-4">Processing Options</h3>
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-6">
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" id="removeDuplicates" class="form-checkbox text-blue-500" checked>
+                            <span class="ml-2">Remove Duplicates</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" id="validateEmail" class="form-checkbox text-blue-500" checked>
+                            <span class="ml-2">Validate Email Format</span>
+                        </label>
+                    </div>
+                    <div class="flex items-center space-x-6">
+                        <span class="text-sm font-medium">Output Format:</span>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="outputFormat" value="email" class="form-radio text-blue-500" checked>
+                            <span class="ml-2">Email:Pass</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="outputFormat" value="user" class="form-radio text-blue-500">
+                            <span class="ml-2">User:Pass</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex space-x-4">
+                <button id="processBtn" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <i class="fas fa-cog mr-2"></i>Process
+                </button>
+                <button id="downloadBtn" class="hidden bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fas fa-download mr-2"></i>Download
+                </button>
+            </div>
+
+            <!-- Results -->
+            <div id="results" class="mt-6">
+                <h3 class="text-lg font-medium mb-4">Results</h3>
+                <div id="resultsContent" class="bg-gray-50 p-4 rounded-lg font-mono text-sm h-64 overflow-auto"></div>
+            </div>
+
+            <!-- Processing Stats -->
+            <div id="stats" class="mt-6 grid grid-cols-4 gap-4">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="text-sm font-medium text-gray-500">Total Lines</div>
+                    <div id="totalLines" class="text-2xl font-bold">0</div>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="text-sm font-medium text-gray-500">Processed</div>
+                    <div id="processedLines" class="text-2xl font-bold">0</div>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="text-sm font-medium text-gray-500">Duplicates</div>
+                    <div id="duplicatesRemoved" class="text-2xl font-bold">0</div>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="text-sm font-medium text-gray-500">Time (s)</div>
+                    <div id="processingTime" class="text-2xl font-bold">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentFile = null;
+
+        // Handle cleanup
+        async function cleanupFiles(currentFile = null) {
+            try {
+                const response = await fetch('/cleanup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ exclude_file: currentFile })
+                });
+                if (!response.ok) {
+                    console.error('Cleanup failed:', await response.text());
+                }
+            } catch (error) {
+                console.error('Cleanup error:', error);
+            }
+        }
+
+        // Cleanup on page load/unload
+        window.addEventListener('load', () => cleanupFiles());
+        window.addEventListener('beforeunload', () => cleanupFiles());
+
+        function formatSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        async function resetForm() {
+            const oldFile = currentFile;
+            currentFile = null;
+            
+            // Reset UI
+            document.getElementById('fileInput').value = '';
+            document.getElementById('fileInfo').classList.add('hidden');
+            document.getElementById('processBtn').disabled = true;
+            document.getElementById('downloadBtn').classList.add('hidden');
+            document.getElementById('uploadProgress').classList.add('hidden');
+            document.getElementById('uploadBar').style.width = '0%';
+            document.getElementById('uploadPercent').textContent = '0%';
+            document.getElementById('resultsContent').textContent = '';
+            
+            // Reset stats
+            document.getElementById('totalLines').textContent = '0';
+            document.getElementById('processedLines').textContent = '0';
+            document.getElementById('duplicatesRemoved').textContent = '0';
+            document.getElementById('processingTime').textContent = '0';
+
+            // Cleanup old files
+            await cleanupFiles();
+        }
+
+        function updateStats(stats) {
+            if (!stats) return;
+            
+            document.getElementById('totalLines').textContent = stats.total_lines || '0';
+            document.getElementById('processedLines').textContent = stats.matches_found || '0';
+            document.getElementById('duplicatesRemoved').textContent = stats.duplicates_removed || '0';
+            document.getElementById('processingTime').textContent = stats.processing_time || '0';
+        }
+
+        // File Upload Handler
+        document.getElementById('fileInput').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            resetForm();
+            currentFile = file;
+
+            // Show file info
+            document.getElementById('fileInfo').classList.remove('hidden');
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = formatSize(file.size);
+
+            // Show upload progress
+            const progress = document.getElementById('uploadProgress');
+            const progressBar = document.getElementById('uploadBar');
+            const progressText = document.getElementById('uploadPercent');
+            progress.classList.remove('hidden');
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', '/upload', true);
+
+                xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                        const percent = (e.loaded / e.total * 100).toFixed(0);
+                        progressBar.style.width = percent + '%';
+                        progressText.textContent = percent + '%';
+                    }
+                };
+
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        document.getElementById('processBtn').disabled = false;
+                        const data = JSON.parse(xhr.responseText);
+                        document.getElementById('resultsContent').textContent = data.preview || '';
+                    } else {
+                        throw new Error(xhr.responseText);
+                    }
+                };
+
+                xhr.send(formData);
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('Upload failed: ' + error.message);
+            }
+        });
+
+        // Process Button Handler
+        document.getElementById('processBtn').addEventListener('click', async () => {
+            if (!currentFile) return;
+
+            const processBtn = document.getElementById('processBtn');
+            processBtn.disabled = true;
+            processBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+
+            try {
+                const response = await fetch('/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        filename: currentFile.name,
+                        removeDuplicates: document.getElementById('removeDuplicates').checked,
+                        validateEmail: document.getElementById('validateEmail').checked,
+                        outputFormat: document.querySelector('input[name="outputFormat"]:checked').value,
+                    }),
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    if (data.error) {
+                        // Show error but keep UI state
+                        document.getElementById('resultsContent').innerHTML = 
+                            `<div class="text-red-500"><i class="fas fa-exclamation-circle mr-2"></i>${data.error}</div>`;
+                        return;
+                    }
+                    
+                    // Update all stats
+                    updateStats(data.stats);
+                    
+                    // Update results content
+                    if (data.results && data.results.length > 0) {
+                        document.getElementById('resultsContent').textContent = data.results.join('\n');
+                    } else {
+                        document.getElementById('resultsContent').textContent = 
+                            `Processing complete.\nTotal lines: ${data.stats.total_lines}\nProcessed: ${data.stats.matches_found}\nDuplicates removed: ${data.stats.duplicates_removed}\nTime: ${data.stats.processing_time}s`;
+                    }
+
+                    const downloadBtn = document.getElementById('downloadBtn');
+                    downloadBtn.classList.remove('hidden');
+                    downloadBtn.onclick = () => downloadFile(data.result_file);
+                } else {
+                    throw new Error(data.error || 'Processing failed');
+                }
+            } catch (error) {
+                console.error('Processing error:', error);
+                document.getElementById('resultsContent').innerHTML = `
+                    <div class="text-red-500">
+                        <i class="fas fa-exclamation-circle mr-2"></i>${error.message}
+                    </div>`;
+            } finally {
+                processBtn.disabled = false;
+                processBtn.innerHTML = '<i class="fas fa-cog mr-2"></i>Process';
+            }
+        });
+
+        // Download Handler
+        async function downloadFile(filename) {
+            const btn = document.getElementById('downloadBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Downloading...';
+
+            try {
+                const response = await fetch(`/download/${filename}`);
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Download failed');
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch (error) {
+                console.error('Download error:', error);
+                document.getElementById('resultsContent').innerHTML = `
+                    <div class="text-red-500">
+                        <i class="fas fa-exclamation-circle mr-2"></i>${error.message}
+                    </div>`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+    </script>
+</body>
+</html>
